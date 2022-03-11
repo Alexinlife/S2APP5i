@@ -25,6 +25,9 @@
 import os
 import glob
 import ntpath
+import argparse
+from unidecode import unidecode
+
 
 class markov:
     """Classe à utiliser pour coder la solution à la problématique:
@@ -40,9 +43,9 @@ class markov:
     Copyright 2018-2022, F. Mailhot et Université de Sherbrooke
     """
 
-    # Le code qui suit est fourni pour vous faciliter la vie.  Il n'a pas à être modifié
-    # Signes de ponctuation à retirer (compléter la liste qui ne comprend que "!" et "," au départ)
-    PONC = ["!",","]
+    # Le code qui suit est fourni pour vous faciliter la vie. Il n'a pas à être modifié
+    # Signes de ponctuation à retirer
+    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "-", "_"]
 
     def set_ponc(self, value):
         """Détermine si les signes de ponctuation sont conservés (True) ou éliminés (False)
@@ -107,7 +110,6 @@ class markov:
         self.set_auteurs()
         return
 
-
     def set_ngram(self, ngram):
         """Indique que l'analyse et la génération de texte se fera avec des n-grammes de taille ngram
 
@@ -121,9 +123,6 @@ class markov:
 
     def __init__(self):
         """Initialize l'objet de type markov lorsqu'il est créé
-
-        Args:
-            aucun: Utilise simplement les informations fournies dans l'objet Markov_config
 
         Returns:
             void : ne fait qu'initialiser l'objet de type markov
@@ -160,7 +159,6 @@ class markov:
 
         resultats = [("balzac", 0.1234), ("voltaire", 0.1123)]   # Exemple du format des sorties
 
-
         # Ajouter votre code pour déterminer la proximité du fichier passé en paramètre avec chacun des auteurs
         # Retourner la liste des auteurs, chacun avec sa proximité au fichier inconnu
         # Plus la proximité est grande, plus proche l'oeuvre inconnue est des autres écrits d'un auteur
@@ -194,33 +192,59 @@ class markov:
             n (int): Indice du n-gramme à retourner
 
         Returns:
-            ngram (List[Liste[string]]) : Liste de liste de mots composant le n-gramme recherché (il est possible qu'il y ait plus d'un n-gramme au même rang)
+            ngram (List[Liste[string]]) : Liste de liste de mots composant le n-gramme recherché (il est possible qu'il
+                                          y ait plus d'un n-gramme au même rang)
         """
         ngram = [['un', 'roman']]   # Exemple du format de sortie d'un bigramme
         return ngram
 
-
     def analyze(self):
         """Fait l'analyse des textes fournis, en traitant chaque oeuvre de chaque auteur
-
-        Args:
-            void: toute l'information est contenue dans l'objet markov
 
         Returns:
             void : ne retourne rien, toute l'information extraite est conservée dans des strutures internes
         """
 
-        # Ajouter votre code ici pour traiter l'ensemble des oeuvres de l'ensemble des auteurs
+        path_to_texts = os.getcwd() + "/TextesPourEtudiants/"
+        auteurs = dict()
+        # pour chaque auteur
+        for folder in os.listdir(path_to_texts):
+            auteurs[folder] = dict()
+            # pour chaque texte
+            for filename in os.listdir(path_to_texts + folder):
+                with open(os.path.join(path_to_texts + folder, filename), 'r', encoding="utf-8") as file:
+                    word = ""
+                    for line in file:
+                        line = line.lower()
+                        for char in line:
+                            if char == '\n' or char == '\xa0' or char in self.PONC:
+                                char = ' '
+                            if char != ' ':
+                                word += char
+                            # si le mot est trop petit, mot suivant
+                            elif len(word) < 3 and word != [0-99]:
+                                word = ""
+                            elif word != "":
+                                if word in auteurs[folder]:
+                                    auteurs[folder][word] += 1
+                                else:
+                                    auteurs[folder][word] = 1
+                                word = ""
+            print(folder + " : " + str(auteurs[folder]["comme"]))
+
         # Pour l'analyse:  faire le calcul des fréquences de n-grammes pour l'ensemble des oeuvres
         #   d'un certain auteur, sans distinction des oeuvres individuelles,
         #       et recommencer ce calcul pour chacun des auteurs
         #   En procédant ainsi, les oeuvres comprenant plus de mots auront un impact plus grand sur
         #   les statistiques globales d'un auteur
-        # Il serait possible de considérer chacune des oeuvres d'un auteur comme ayant un poids identique.
-        #   Pour ce faire, il faudrait faire les calculs de fréquence pour chacune des oeuvres
-        #       de façon indépendante, pour ensuite les normaliser (diviser chaque vecteur par sa norme),
-        #       avant des les additionner pour obtenir le vecteur global d'un auteur
-        #   De cette façon, les mots d'un court poème auraient une importance beaucoup plus grande que
-        #   les mots d'une très longue oeuvre du même auteur. Ce n'est PAS ce qui vous est demandé ici.
 
         return
+
+
+# Main
+# Arguments de la ligne de commande
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    m = markov()
+    m.analyze()
