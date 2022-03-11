@@ -11,7 +11,7 @@ import argparse
 import importlib
 import sys
 
-import markov_CIP1_CIP2 as markov
+import markov_cotc1105_laja1501 as markov
 
 
 class TestMarkov():
