@@ -134,6 +134,7 @@ class markov:
         self.ngram = 1
         self.folders = []
         self.dict = dict()
+        self.nth_most = None
 
         return
 
@@ -193,12 +194,30 @@ class markov:
             n (int): Indice du n-gramme à retourner
 
         Returns:
-            ngram (List[Liste[string]]) : Liste de liste de mots composant le n-gramme recherché (il est possible qu'il
+            ngram (List[List[string]]) : Liste de liste de mots composant le n-gramme recherché (il est possible qu'il
                                           y ait plus d'un n-gramme au même rang)
         """
-        ngram = [['un', 'roman']]   # Exemple du format de sortie d'un bigramme
-        sorted_table = sorted(self.auteurs[auteur].items(), key=lambda item: item[1], reverse=True)
-        return sorted_table[n]
+
+        sorted_table = sorted(self.dict[auteur].items(), key=lambda item: item[1], reverse=True)
+        smallest_index = n - 1
+        greatest_index = n + 1
+        return_arr = []
+        while smallest_index > 0:
+            if sorted_table[smallest_index][1] == sorted_table[n][1]:
+                smallest_index -= 1
+            else:
+                smallest_index += 1
+                break
+        while greatest_index < len(sorted_table):
+            if sorted_table[greatest_index][1] == greatest_index[n][1]:
+                greatest_index += 1
+            else:
+                greatest_index -= 1
+                break
+        for i in range(smallest_index, greatest_index):
+            return_arr.append(sorted_table[i])
+
+        return return_arr
 
     def analyze(self):
         """Fait l'analyse des textes fournis, en traitant chaque oeuvre de chaque auteur
@@ -246,6 +265,8 @@ class markov:
                                 else:
                                     word_arr.append(word)
                                     word = ""
+            if self.nth_most is not None:
+                print(self.get_nth_element(subfolder, self.nth_most))
             print(subfolder + " : " + str(self.dict[subfolder]["comme", "moi"]))
 
         return
@@ -257,10 +278,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', required=True, help="répertoire dans lequel se trouvent les textes des auteurs")
     parser.add_argument('-a', help="auteur sur lequel portera l'analyse")
-    parser.add_argument('-A',action='store_true' , help="effectuer l'analyse sur tous les auteurs")
+    parser.add_argument('-A', action='store_true', help="effectuer l'analyse sur tous les auteurs")
     parser.add_argument('-f', help="fichier de texte à comparer avec les fréquences des fichiers de l’auteur choisi")
-    parser.add_argument('-m', required=True, help="taille des n-grammes")
-    parser.add_argument('-F', help="afficher le n-ieme n-gramme le plus fréquent")
+    parser.add_argument('-m', required=True, type=int, help="taille des n-grammes")
+    parser.add_argument('-F', type=int, help="afficher le n-ieme n-gramme le plus fréquent")
     parser.add_argument('-G', help="générer un ou plusieurs textes aléatoires selon les paramètres entrés")
     args = parser.parse_args()
 
@@ -273,10 +294,12 @@ if __name__ == "__main__":
     if args.A:
         m.folders = os.listdir(m.rep_aut)
     if args.m:
-        m.set_ngram(int(args.m))
+        m.set_ngram(args.m)
     else:
         args.m = False
     if not(bool(args.a) ^ bool(args.A)):
         parser.error("Erreur d'attribut. Ajouter l'un des deux paramètres suivants : -a, -A")
+    if args.F:
+        m.nth_most = args.F
 
     m.analyze()
