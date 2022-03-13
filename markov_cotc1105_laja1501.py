@@ -26,7 +26,6 @@ import os
 import glob
 import ntpath
 import argparse
-from unidecode import unidecode
 
 
 class markov:
@@ -45,7 +44,7 @@ class markov:
 
     # Le code qui suit est fourni pour vous faciliter la vie. Il n'a pas à être modifié
     # Signes de ponctuation à retirer
-    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "-", "_"]
+    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "-", "_", "'"]
 
     def set_ponc(self, value):
         """Détermine si les signes de ponctuation sont conservés (True) ou éliminés (False)
@@ -133,8 +132,8 @@ class markov:
         self.rep_aut = os.getcwd()
         self.auteurs = []
         self.ngram = 1
-
-        # Au besoin, ajouter votre code d'initialisation de l'objet de type markov lors de sa création
+        self.folders = []
+        self.dict = dict()
 
         return
 
@@ -148,13 +147,15 @@ class markov:
 
     def find_author(self, oeuvre):
         """Après analyse des textes d'auteurs connus, retourner la liste d'auteurs
-            et le niveau de proximité (un nombre entre 0 et 1) de l'oeuvre inconnue avec les écrits de chacun d'entre eux
+            et le niveau de proximité (un nombre entre 0 et 1) de l'oeuvre inconnue avec les écrits de
+            chacun d'entre eux
 
         Args:
             oeuvre (string): Nom du fichier contenant l'oeuvre d'un auteur inconnu
 
         Returns:
-            resultats (Liste[(string,float)]) : Liste de tuples (auteurs, niveau de proximité), où la proximité est un nombre entre 0 et 1)
+            resultats (Liste[(string,float)]) : Liste de tuples (auteurs, niveau de proximité), où la proximité est
+                                                un nombre entre 0 et 1)
         """
 
         resultats = [("balzac", 0.1234), ("voltaire", 0.1123)]   # Exemple du format des sorties
@@ -196,7 +197,8 @@ class markov:
                                           y ait plus d'un n-gramme au même rang)
         """
         ngram = [['un', 'roman']]   # Exemple du format de sortie d'un bigramme
-        return ngram
+        sorted_table = sorted(self.auteurs[auteur].items(), key=lambda item: item[1], reverse=True)
+        return sorted_table[n]
 
     def analyze(self):
         """Fait l'analyse des textes fournis, en traitant chaque oeuvre de chaque auteur
@@ -205,15 +207,15 @@ class markov:
             void : ne retourne rien, toute l'information extraite est conservée dans des strutures internes
         """
 
-        path_to_texts = os.getcwd() + "/TextesPourEtudiants/"
-        auteurs = dict()
-        # pour chaque auteur
-        for folder in os.listdir(path_to_texts):
-            auteurs[folder] = dict()
+        # pour le/les auteurs
+        for subfolder in self.folders:
+            self.dict[subfolder] = dict()
             # pour chaque texte
-            for filename in os.listdir(path_to_texts + folder):
-                with open(os.path.join(path_to_texts + folder, filename), 'r', encoding="utf-8") as file:
+            for filename in os.listdir(self.rep_aut + '/' + subfolder):
+                with open(os.path.join(self.rep_aut + '/' + subfolder + '/', filename), 'r', encoding="utf-8") as file:
                     word = ""
+                    word_arr = []
+                    ngram = 0
                     for line in file:
                         line = line.lower()
                         for char in line:
@@ -225,18 +227,26 @@ class markov:
                             elif len(word) < 3 and word != [0-99]:
                                 word = ""
                             elif word != "":
-                                if word in auteurs[folder]:
-                                    auteurs[folder][word] += 1
+                                ngram += 1
+                                if ngram == self.ngram:
+                                    if self.ngram == 1:
+                                        if word in self.dict[subfolder]:
+                                            self.dict[subfolder][word] += 1
+                                        else:
+                                            self.dict[subfolder][word] = 1
+                                    else:
+                                        word_arr.append(word)
+                                        if tuple(word_arr) in self.dict[subfolder]:
+                                            self.dict[subfolder][tuple(word_arr)] += 1
+                                        else:
+                                            self.dict[subfolder][tuple(word_arr)] = 1
+                                    word = ""
+                                    word_arr.pop(0)
+                                    ngram -= 1
                                 else:
-                                    auteurs[folder][word] = 1
-                                word = ""
-            print(folder + " : " + str(auteurs[folder]["comme"]))
-
-        # Pour l'analyse:  faire le calcul des fréquences de n-grammes pour l'ensemble des oeuvres
-        #   d'un certain auteur, sans distinction des oeuvres individuelles,
-        #       et recommencer ce calcul pour chacun des auteurs
-        #   En procédant ainsi, les oeuvres comprenant plus de mots auront un impact plus grand sur
-        #   les statistiques globales d'un auteur
+                                    word_arr.append(word)
+                                    word = ""
+            print(subfolder + " : " + str(self.dict[subfolder]["comme", "moi"]))
 
         return
 
@@ -245,6 +255,28 @@ class markov:
 # Arguments de la ligne de commande
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('-d', required=True, help="répertoire dans lequel se trouvent les textes des auteurs")
+    parser.add_argument('-a', help="auteur sur lequel portera l'analyse")
+    parser.add_argument('-A',action='store_true' , help="effectuer l'analyse sur tous les auteurs")
+    parser.add_argument('-f', help="fichier de texte à comparer avec les fréquences des fichiers de l’auteur choisi")
+    parser.add_argument('-m', required=True, help="taille des n-grammes")
+    parser.add_argument('-F', help="afficher le n-ieme n-gramme le plus fréquent")
+    parser.add_argument('-G', help="générer un ou plusieurs textes aléatoires selon les paramètres entrés")
+    args = parser.parse_args()
 
     m = markov()
+
+    if args.d:
+        m.set_aut_dir(args.d)
+    if args.a:
+        m.folders = [args.a]
+    if args.A:
+        m.folders = os.listdir(m.rep_aut)
+    if args.m:
+        m.set_ngram(int(args.m))
+    else:
+        args.m = False
+    if not(bool(args.a) ^ bool(args.A)):
+        parser.error("Erreur d'attribut. Ajouter l'un des deux paramètres suivants : -a, -A")
+
     m.analyze()
