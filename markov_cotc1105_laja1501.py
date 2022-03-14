@@ -25,6 +25,7 @@
 import os
 import glob
 import ntpath
+import argparse
 import math
 import random
 
@@ -45,7 +46,7 @@ class markov:
 
     # Le code qui suit est fourni pour vous faciliter la vie. Il n'a pas à être modifié
     # Signes de ponctuation à retirer
-    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "-", "_", "'"]
+    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "—", "-", "_", "’", "'"]
 
     def set_ponc(self, value):
         """Détermine si les signes de ponctuation sont conservés (True) ou éliminés (False)
@@ -233,7 +234,7 @@ class markov:
                 resultat_auteur += norme_txt * txt_valeur[i] * norme_auteur * auteur_valeur[i]
                 i = i + 1
 
-            resultats.append((auteur,resultat_auteur))
+            resultats.append((auteur, resultat_auteur))
 
         # Ajouter votre code pour déterminer la proximité du fichier passé en paramètre avec chacun des auteurs
         # Retourner la liste des auteurs, chacun avec sa proximité au fichier inconnu
@@ -288,7 +289,6 @@ class markov:
                     if seed <= 0:
                         break
 
-
                 if self.ngram == 1:
                     file.write(empreinte_auteur[m][0])
 
@@ -300,7 +300,6 @@ class markov:
                         n = n + 1
                     file.write(chaine)
                 l = l + 1
-
 
         return
 
@@ -321,20 +320,18 @@ class markov:
         greatest_index = n
         return_arr = []
         while smallest_index > 0:
-            if sorted_table[smallest_index][1] == sorted_table[n][1]:
-                smallest_index -= 1
-            else:
-                if smallest_index < len(sorted_table):
-                    smallest_index += 1
+            smallest_index -= 1
+            if smallest_index < 0:
+                smallest_index += 1
+            elif sorted_table[smallest_index][1] != sorted_table[n][1]:
+                smallest_index += 1
                 break
         while greatest_index < len(sorted_table):
-            if sorted_table[greatest_index][1] == sorted_table[n][1]:
-                greatest_index += 1
-            else:
-                if greatest_index > 0:
-                    greatest_index -= 1
+            greatest_index += 1
+            if sorted_table[greatest_index][1] != sorted_table[n][1] and greatest_index > smallest_index + 1:
+                greatest_index -= 1
                 break
-        for i in [smallest_index - greatest_index]:
+        for i in range(smallest_index, greatest_index):
             return_arr.append(sorted_table[i])
 
         return return_arr
