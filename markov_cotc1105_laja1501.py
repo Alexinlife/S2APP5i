@@ -199,22 +199,24 @@ class markov:
         """
 
         sorted_table = sorted(self.dict[auteur].items(), key=lambda item: item[1], reverse=True)
-        smallest_index = n - 1
-        greatest_index = n + 1
+        smallest_index = n
+        greatest_index = n
         return_arr = []
         while smallest_index > 0:
             if sorted_table[smallest_index][1] == sorted_table[n][1]:
                 smallest_index -= 1
             else:
-                smallest_index += 1
+                if smallest_index < len(sorted_table):
+                    smallest_index += 1
                 break
         while greatest_index < len(sorted_table):
-            if sorted_table[greatest_index][1] == greatest_index[n][1]:
+            if sorted_table[greatest_index][1] == sorted_table[n][1]:
                 greatest_index += 1
             else:
-                greatest_index -= 1
+                if greatest_index > 0:
+                    greatest_index -= 1
                 break
-        for i in range(smallest_index, greatest_index):
+        for i in [smallest_index - greatest_index]:
             return_arr.append(sorted_table[i])
 
         return return_arr
@@ -260,14 +262,15 @@ class markov:
                                         else:
                                             self.dict[subfolder][tuple(word_arr)] = 1
                                     word = ""
-                                    word_arr.pop(0)
+                                    if len(word_arr):
+                                        word_arr.pop(0)
                                     ngram -= 1
                                 else:
                                     word_arr.append(word)
                                     word = ""
             if self.nth_most is not None:
-                print(self.get_nth_element(subfolder, self.nth_most))
-            print(subfolder + " : " + str(self.dict[subfolder]["comme", "moi"]))
+                print(subfolder + " : " + str(self.get_nth_element(subfolder, self.nth_most)))
+            # print(subfolder + " : " + str(self.dict[subfolder]["comme", "moi"]))
 
         return
 
@@ -299,7 +302,7 @@ if __name__ == "__main__":
         args.m = False
     if not(bool(args.a) ^ bool(args.A)):
         parser.error("Erreur d'attribut. Ajouter l'un des deux paramètres suivants : -a, -A")
-    if args.F:
+    if args.F is not None:
         m.nth_most = args.F
 
     m.analyze()
