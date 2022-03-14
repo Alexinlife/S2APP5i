@@ -267,7 +267,7 @@ class markov:
         path_text = os.path.normpath(path_text)
 
         with open(path_text, 'w', encoding="utf-8") as file:
-            sorted_dict = dict(sorted(self.dict[auteur].items(),key= lambda x:x[1]))
+            sorted_dict = dict(sorted(self.dict[auteur].items(), key=lambda x: x[1]))
             empreinte_auteur = []
             for key in sorted_dict.keys():
                 empreinte_auteur.append((key, sorted_dict[key]))
@@ -279,27 +279,27 @@ class markov:
                 i = i + 1
             nbre_pass = int(taille/self.ngram)
 
-            l = 0
-            while l <= nbre_pass:
-                seed = random.randint(0,nbre_mots)
-                m = 0
+            ligne = 0
+            while ligne <= nbre_pass:
+                seed = random.randint(0, nbre_mots)
+                mot = 0
                 while 1:
-                    seed -= empreinte_auteur[m][1]
-                    m = m + 1
+                    seed -= empreinte_auteur[mot][1]
+                    mot = mot + 1
                     if seed <= 0:
                         break
 
                 if self.ngram == 1:
-                    file.write(empreinte_auteur[m][0])
+                    file.write(str(empreinte_auteur[mot][0]))
 
                 else:
                     n = 0
-                    chaine = empreinte_auteur[m][0][0]
+                    chaine = empreinte_auteur[mot][0][0]
                     while n < self.ngram:
-                        chaine = chaine + " " + empreinte_auteur[m][0][n]
+                        chaine = chaine + " " + empreinte_auteur[mot][0][n]
                         n = n + 1
                     file.write(chaine)
-                l = l + 1
+                ligne = ligne + 1
 
         return
 
