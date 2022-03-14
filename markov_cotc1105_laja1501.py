@@ -46,7 +46,7 @@ class markov:
 
     # Le code qui suit est fourni pour vous faciliter la vie. Il n'a pas à être modifié
     # Signes de ponctuation à retirer
-    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "—", "-", "_", "’", "'"]
+    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "—", "-", "_", "’", "'", "«", "»"]
 
     def set_ponc(self, value):
         """Détermine si les signes de ponctuation sont conservés (True) ou éliminés (False)
@@ -173,12 +173,17 @@ class markov:
 
         with open(path_oeuvre, 'r', encoding="utf-8") as file:
             word = ""
+            ponc = ''
             word_arr = []
             ngram = 0
             for line in file:
                 line = line.lower()
                 for char in line:
-                    if char == '\n' or char == '\xa0' or char in self.PONC:
+                    if char == '\n' or char == '\xa0':
+                        char = ' '
+                    if self.keep_ponc and char in self.PONC:
+                        ponc = char
+                    if char in self.PONC:
                         char = ' '
                     if char != ' ':
                         word += char
@@ -205,6 +210,9 @@ class markov:
                             ngram -= 1
                         else:
                             word_arr.append(word)
+                            if ponc != '':
+                                word_arr.append(ponc)
+                                ponc = ''
                             word = ""
 
         resultats = []
@@ -236,6 +244,8 @@ class markov:
 
             resultats.append((auteur, resultat_auteur))
 
+        return resultats
+
         # Ajouter votre code pour déterminer la proximité du fichier passé en paramètre avec chacun des auteurs
         # Retourner la liste des auteurs, chacun avec sa proximité au fichier inconnu
         # Plus la proximité est grande, plus proche l'oeuvre inconnue est des autres écrits d'un auteur
@@ -244,8 +254,6 @@ class markov:
         #   Le produit scalaire devrait être normalisé avec la taille du vecteur associé au texte inconnu:
         #   proximité = (A . B) / (|A| |B|)   où A est le vecteur du texte inconnu et B est celui d'un auteur,
         #           . est le produit scalaire, et |X| est la norme (longueur) du vecteur X
-
-        return resultats
 
     def gen_text(self, auteur, taille, textname):
         """Après analyse des textes d'auteurs connus, produire un texte selon des statistiques d'un auteur
@@ -267,7 +275,7 @@ class markov:
         path_text = os.path.normpath(path_text)
 
         with open(path_text, 'w', encoding="utf-8") as file:
-            sorted_dict = dict(sorted(self.dict[auteur].items(), key=lambda x: x[1]))
+            sorted_dict = dict(sorted(self.dict[auteur].items(), key=lambda x: x[1], reverse=True))
             empreinte_auteur = []
             for key in sorted_dict.keys():
                 empreinte_auteur.append((key, sorted_dict[key]))
@@ -290,13 +298,13 @@ class markov:
                         break
 
                 if self.ngram == 1:
-                    file.write(str(empreinte_auteur[mot][0]))
+                    file.write(str(empreinte_auteur[mot][0]) + " ")
 
                 else:
                     n = 0
                     chaine = empreinte_auteur[mot][0][0]
                     while n < self.ngram:
-                        chaine = chaine + " " + empreinte_auteur[mot][0][n]
+                        chaine = chaine + " " + empreinte_auteur[mot][0][n] + " "
                         n = n + 1
                     file.write(chaine)
                 ligne = ligne + 1
@@ -315,6 +323,7 @@ class markov:
                                           y ait plus d'un n-gramme au même rang)
         """
 
+        n -= 1
         sorted_table = sorted(self.dict[auteur].items(), key=lambda item: item[1], reverse=True)
         smallest_index = n
         greatest_index = n
@@ -343,26 +352,33 @@ class markov:
             void : ne retourne rien, toute l'information extraite est conservée dans des strutures internes
         """
 
-        # pour le/les auteurs
-        for subfolder in self.folders:
+        # pour chaque auteur
+        for subfolder in os.listdir(self.rep_aut):
             self.dict[subfolder] = dict()
             # pour chaque texte
             for filename in os.listdir(self.rep_aut + '/' + subfolder):
                 with open(os.path.join(self.rep_aut + '/' + subfolder + '/', filename), 'r', encoding="utf-8") as file:
                     word = ""
+                    ponc = ''
                     word_arr = []
                     ngram = 0
                     for line in file:
                         line = line.lower()
                         for char in line:
-                            if char == '\n' or char == '\xa0' or char in self.PONC:
+                            if char == '\n' or char == '\xa0':
+                                char = ' '
+                            if self.keep_ponc and char in self.PONC:
+                                ponc = char
+                            if char in self.PONC:
                                 char = ' '
                             if char != ' ':
                                 word += char
                             # si le mot est trop petit, mot suivant
                             elif len(word) < 3 and word != [0-99]:
                                 word = ""
-                            elif word != "":
+                            elif word != "" or (self.keep_ponc and char in self.PONC):
+                                if word != "" and (self.keep_ponc and char in self.PONC):
+                                    ngram += 2
                                 ngram += 1
                                 if ngram == self.ngram:
                                     if self.ngram == 1:
@@ -370,6 +386,12 @@ class markov:
                                             self.dict[subfolder][word] += 1
                                         else:
                                             self.dict[subfolder][word] = 1
+                                        if ponc != '':
+                                            if ponc in self.dict[subfolder]:
+                                                self.dict[subfolder][ponc] += 1
+                                                ponc = ''
+                                            else:
+                                                self.dict[subfolder][ponc] = 1
                                     else:
                                         word_arr.append(word)
                                         if tuple(word_arr) in self.dict[subfolder]:
@@ -382,10 +404,16 @@ class markov:
                                     ngram -= 1
                                 else:
                                     word_arr.append(word)
+                                    # if ponc != '':
+                                        # word_arr.append(ponc)
+                                        # ngram += 1
+                                        # ponc = ''
                                     word = ""
             if self.nth_most is not None:
                 print(subfolder + " : " + str(self.get_nth_element(subfolder, self.nth_most)))
-            # print(subfolder + " : " + str(self.dict[subfolder]["comme", "moi"]))
+            for i in range(1, 50):
+                print(subfolder + " : " + str(self.get_nth_element(subfolder, i)))
+            # print(subfolder + " : " + str(self.get_nth_element(subfolder, 0)))
 
         return
 
@@ -407,17 +435,13 @@ if __name__ == "__main__":
 
     if args.d:
         m.set_aut_dir(args.d)
-    if args.a:
-        m.folders = [args.a]
-    if args.A:
-        m.folders = os.listdir(m.rep_aut)
     if args.m:
         m.set_ngram(args.m)
     else:
         args.m = False
-    if not(bool(args.a) ^ bool(args.A)):
-        parser.error("Erreur d'attribut. Ajouter l'un des deux paramètres suivants : -a, -A")
     if args.F is not None:
         m.nth_most = args.F
 
     m.analyze()
+    if args.f:
+        print(m.find_author(args.f))
