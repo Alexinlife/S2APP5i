@@ -25,7 +25,8 @@
 import os
 import glob
 import ntpath
-import argparse
+import math
+import random
 
 
 class markov:
@@ -159,7 +160,80 @@ class markov:
                                                 un nombre entre 0 et 1)
         """
 
-        resultats = [("balzac", 0.1234), ("voltaire", 0.1123)]   # Exemple du format des sorties
+        cwd = os.getcwd()
+        if os.path.isabs(oeuvre):
+            path_oeuvre = oeuvre
+        else:
+            path_oeuvre = os.path.join(cwd, oeuvre)
+
+        path_oeuvre = os.path.normpath(path_oeuvre)
+
+        txt_inconnu = dict()
+
+        with open(path_oeuvre, 'r', encoding="utf-8") as file:
+            word = ""
+            word_arr = []
+            ngram = 0
+            for line in file:
+                line = line.lower()
+                for char in line:
+                    if char == '\n' or char == '\xa0' or char in self.PONC:
+                        char = ' '
+                    if char != ' ':
+                        word += char
+                    # si le mot est trop petit, mot suivant
+                    elif len(word) < 3 and word != [0-99]:
+                        word = ""
+                    elif word != "":
+                        ngram += 1
+                        if ngram == self.ngram:
+                            if self.ngram == 1:
+                                if word in txt_inconnu:
+                                    txt_inconnu[word] += 1
+                                else:
+                                    txt_inconnu[word] = 1
+                            else:
+                                word_arr.append(word)
+                                if tuple(word_arr) in txt_inconnu:
+                                    txt_inconnu[tuple(word_arr)] += 1
+                                else:
+                                    txt_inconnu[tuple(word_arr)] = 1
+                            word = ""
+                            if len(word_arr):
+                                word_arr.pop(0)
+                            ngram -= 1
+                        else:
+                            word_arr.append(word)
+                            word = ""
+
+        resultats = []
+
+        for auteur in self.folders:
+            txt_valeur = []
+            auteur_valeur = []
+            for txt_key in txt_inconnu.keys():
+                for auteur_key in self.dict[auteur].keys():
+                    if txt_key == auteur_key:
+                        txt_valeur.append(txt_inconnu[txt_key])
+                        auteur_valeur.append(self.dict[auteur][auteur_key])
+
+            norme_txt = 0
+            for norme_calcul1 in txt_valeur:
+                norme_txt += norme_calcul1**2
+            norme_txt = 1/math.sqrt(norme_txt)
+
+            norme_auteur = 0
+            for norme_calcul2 in auteur_valeur:
+                norme_auteur += norme_calcul2**2
+            norme_auteur = 1/math.sqrt(norme_auteur)
+
+            i = 0
+            resultat_auteur = 0
+            while i < len(txt_valeur):
+                resultat_auteur += norme_txt * txt_valeur[i] * norme_auteur * auteur_valeur[i]
+                i = i + 1
+
+            resultats.append((auteur,resultat_auteur))
 
         # Ajouter votre code pour déterminer la proximité du fichier passé en paramètre avec chacun des auteurs
         # Retourner la liste des auteurs, chacun avec sa proximité au fichier inconnu
@@ -183,6 +257,50 @@ class markov:
         Returns:
             void : ne retourne rien, le texte produit doit être écrit dans le fichier "textname"
         """
+        cwd = os.getcwd()
+        if os.path.isabs(textname):
+            path_text = textname
+        else:
+            path_text = os.path.join(cwd, textname)
+
+        path_text = os.path.normpath(path_text)
+
+        with open(path_text, 'w', encoding="utf-8") as file:
+            sorted_dict = dict(sorted(self.dict[auteur].items(),key= lambda x:x[1]))
+            empreinte_auteur = []
+            for key in sorted_dict.keys():
+                empreinte_auteur.append((key, sorted_dict[key]))
+
+            i = 0
+            nbre_mots = 0
+            while i < len(empreinte_auteur):
+                nbre_mots += empreinte_auteur[i][1]
+                i = i + 1
+            nbre_pass = int(taille/self.ngram)
+
+            l = 0
+            while l <= nbre_pass:
+                seed = random.randint(0,nbre_mots)
+                m = 0
+                while 1:
+                    seed -= empreinte_auteur[m][1]
+                    m = m + 1
+                    if seed <= 0:
+                        break
+
+
+                if self.ngram == 1:
+                    file.write(empreinte_auteur[m][0])
+
+                else:
+                    n = 0
+                    chaine = empreinte_auteur[m][0][0]
+                    while n < self.ngram:
+                        chaine = chaine + " " + empreinte_auteur[m][0][n]
+                        n = n + 1
+                    file.write(chaine)
+                l = l + 1
+
 
         return
 
