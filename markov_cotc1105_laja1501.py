@@ -367,25 +367,27 @@ class markov:
                         for char in line:
                             if char == '\n' or char == '\xa0':
                                 char = ' '
-                            if self.keep_ponc and char in self.PONC:
+                            elif self.keep_ponc and char in self.PONC:
                                 ponc = char
-                            if char in self.PONC:
+                                char = ' '
+                            elif char in self.PONC:
                                 char = ' '
                             if char != ' ':
                                 word += char
                             # si le mot est trop petit, mot suivant
-                            elif len(word) < 3 and word != [0-99]:
+                            elif len(word) < 3 and word != [0-99] and not(self.keep_ponc and char in self.PONC):
                                 word = ""
                             elif word != "" or (self.keep_ponc and char in self.PONC):
-                                if word != "" and (self.keep_ponc and char in self.PONC):
-                                    ngram += 2
                                 ngram += 1
+                                if word != "" and (self.keep_ponc and ponc in self.PONC):
+                                    ngram += 1
                                 if ngram == self.ngram:
                                     if self.ngram == 1:
-                                        if word in self.dict[subfolder]:
-                                            self.dict[subfolder][word] += 1
-                                        else:
-                                            self.dict[subfolder][word] = 1
+                                        if word != "":
+                                            if word in self.dict[subfolder]:
+                                                self.dict[subfolder][word] += 1
+                                            else:
+                                                self.dict[subfolder][word] = 1
                                         if ponc != '':
                                             if ponc in self.dict[subfolder]:
                                                 self.dict[subfolder][ponc] += 1
@@ -393,27 +395,66 @@ class markov:
                                             else:
                                                 self.dict[subfolder][ponc] = 1
                                     else:
-                                        word_arr.append(word)
-                                        if tuple(word_arr) in self.dict[subfolder]:
-                                            self.dict[subfolder][tuple(word_arr)] += 1
-                                        else:
-                                            self.dict[subfolder][tuple(word_arr)] = 1
+                                        if word != "":
+                                            word_arr.append(word)
+                                            if tuple(word_arr) in self.dict[subfolder]:
+                                                self.dict[subfolder][tuple(word_arr)] += 1
+                                            else:
+                                                self.dict[subfolder][tuple(word_arr)] = 1
+                                        if ponc != '':
+                                            word_arr.append(ponc)
+                                            if tuple(word_arr) in self.dict[subfolder]:
+                                                self.dict[subfolder][tuple(word_arr)] += 1
+                                            else:
+                                                self.dict[subfolder][tuple(word_arr)] = 1
                                     word = ""
+                                    ponc = ''
                                     if len(word_arr):
                                         word_arr.pop(0)
                                     ngram -= 1
-                                else:
-                                    word_arr.append(word)
-                                    # if ponc != '':
-                                        # word_arr.append(ponc)
-                                        # ngram += 1
-                                        # ponc = ''
+                                elif ngram > self.ngram:
+                                    if self.ngram == 1:
+                                        if word != "":
+                                            if word in self.dict[subfolder]:
+                                                self.dict[subfolder][word] += 1
+                                            else:
+                                                self.dict[subfolder][word] = 1
+                                        if ponc != '':
+                                            if ponc in self.dict[subfolder]:
+                                                self.dict[subfolder][ponc] += 1
+                                            else:
+                                                self.dict[subfolder][ponc] = 1
+                                    else:
+                                        if word != "":
+                                            word_arr.append(word)
+                                            if tuple(word_arr) in self.dict[subfolder]:
+                                                self.dict[subfolder][tuple(word_arr)] += 1
+                                            else:
+                                                self.dict[subfolder][tuple(word_arr)] = 1
+                                        if ponc != '':
+                                            word_arr.append(ponc)
+                                            if tuple(word_arr) in self.dict[subfolder]:
+                                                self.dict[subfolder][tuple(word_arr)] += 1
+                                            else:
+                                                self.dict[subfolder][tuple(word_arr)] = 1
                                     word = ""
+                                    ponc = ''
+                                    while ngram > self.ngram - 1:
+                                        if len(word_arr):
+                                            word_arr.pop(0)
+                                        ngram -= 1
+                                elif ngram < self.ngram:
+                                    word_arr.append(word)
+                                    word = ""
+                                    if ponc != '':
+                                        word_arr.append(ponc)
+                                        ponc = ''
             if self.nth_most is not None:
                 print(subfolder + " : " + str(self.get_nth_element(subfolder, self.nth_most)))
-            for i in range(1, 50):
+            for i in range(1, 15):
                 print(subfolder + " : " + str(self.get_nth_element(subfolder, i)))
             # print(subfolder + " : " + str(self.get_nth_element(subfolder, 0)))
+            # print(subfolder + " : " + str(self.dict[subfolder]["-"]))
 
         return
 
