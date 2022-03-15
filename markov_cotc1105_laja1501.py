@@ -46,7 +46,7 @@ class markov:
 
     # Le code qui suit est fourni pour vous faciliter la vie. Il n'a pas à être modifié
     # Signes de ponctuation à retirer
-    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "—", "-", "_", "’", "'", "«", "»"]
+    PONC = ["!", "?", ",", ".", ":", ";", "(", ")", "—", "-", "_", "’", "'", "«", "»", "[", "]"]
 
     def set_ponc(self, value):
         """Détermine si les signes de ponctuation sont conservés (True) ou éliminés (False)
@@ -134,9 +134,7 @@ class markov:
         self.rep_aut = os.getcwd()
         self.auteurs = []
         self.ngram = 1
-        self.folders = []
         self.dict = dict()
-        self.nth_most = None
 
         return
 
@@ -147,6 +145,100 @@ class markov:
     # If faut coder les fonctions find_author(), gen_text(), get_nth_element() et analyse()
     # La fonction analyse() est appelée en premier par testmarkov.py
     # Ensuite, selon ce qui est demandé, les fonctions find_author(), gen_text() ou get_nth_element() sont appelées
+
+    def _analyze(self, path, dict):
+        with open(path, 'r', encoding="utf-8") as file:
+            word = ""
+            ponc = ''
+            word_arr = []
+            ngram = 0
+            for line in file:
+                line = line.lower()
+                for char in line:
+                    if char == '\n' or char == '\xa0':
+                        char = ' '
+                    elif self.keep_ponc and char in self.PONC:
+                        ponc = char
+                        char = ' '
+                    elif char in self.PONC:
+                        char = ' '
+                    if char != ' ':
+                        word += char
+                    # si le mot est trop petit, mot suivant
+                    elif len(word) < 3 and word != [0 - 99] and not (self.keep_ponc and char in self.PONC):
+                        word = ""
+                    elif word != "" or (self.keep_ponc and char in self.PONC):
+                        ngram += 1
+                        if word != "" and (self.keep_ponc and ponc in self.PONC):
+                            ngram += 1
+                        if ngram == self.ngram:
+                            if self.ngram == 1:
+                                if word != "":
+                                    if word in dict:
+                                        dict[word] += 1
+                                    else:
+                                        dict[word] = 1
+                                if ponc != '':
+                                    if ponc in dict:
+                                        dict[ponc] += 1
+                                        ponc = ''
+                                    else:
+                                        dict[ponc] = 1
+                            else:
+                                if word != "":
+                                    word_arr.append(word)
+                                    if tuple(word_arr) in dict:
+                                        dict[tuple(word_arr)] += 1
+                                    else:
+                                        dict[tuple(word_arr)] = 1
+                                if ponc != '':
+                                    word_arr.append(ponc)
+                                    if tuple(word_arr) in dict:
+                                        dict[tuple(word_arr)] += 1
+                                    else:
+                                        dict[tuple(word_arr)] = 1
+                            word = ""
+                            ponc = ''
+                            if len(word_arr):
+                                word_arr.pop(0)
+                            ngram -= 1
+                        elif ngram > self.ngram:
+                            if self.ngram == 1:
+                                if word != "":
+                                    if word in dict:
+                                        dict[word] += 1
+                                    else:
+                                        dict[word] = 1
+                                if ponc != '':
+                                    if ponc in dict:
+                                        dict[ponc] += 1
+                                    else:
+                                        dict[ponc] = 1
+                            else:
+                                if word != "":
+                                    word_arr.append(word)
+                                    if tuple(word_arr) in dict:
+                                        dict[tuple(word_arr)] += 1
+                                    else:
+                                        dict[tuple(word_arr)] = 1
+                                if ponc != '':
+                                    word_arr.append(ponc)
+                                    if tuple(word_arr) in dict:
+                                        dict[tuple(word_arr)] += 1
+                                    else:
+                                        dict[tuple(word_arr)] = 1
+                            word = ""
+                            ponc = ''
+                            while ngram > self.ngram - 1:
+                                if len(word_arr):
+                                    word_arr.pop(0)
+                                ngram -= 1
+                        elif ngram < self.ngram:
+                            word_arr.append(word)
+                            word = ""
+                            if ponc != '':
+                                word_arr.append(ponc)
+                                ponc = ''
 
     def find_author(self, oeuvre):
         """Après analyse des textes d'auteurs connus, retourner la liste d'auteurs
@@ -171,49 +263,7 @@ class markov:
 
         txt_inconnu = dict()
 
-        with open(path_oeuvre, 'r', encoding="utf-8") as file:
-            word = ""
-            ponc = ''
-            word_arr = []
-            ngram = 0
-            for line in file:
-                line = line.lower()
-                for char in line:
-                    if char == '\n' or char == '\xa0':
-                        char = ' '
-                    if self.keep_ponc and char in self.PONC:
-                        ponc = char
-                    if char in self.PONC:
-                        char = ' '
-                    if char != ' ':
-                        word += char
-                    # si le mot est trop petit, mot suivant
-                    elif len(word) < 3 and word != [0-99]:
-                        word = ""
-                    elif word != "":
-                        ngram += 1
-                        if ngram == self.ngram:
-                            if self.ngram == 1:
-                                if word in txt_inconnu:
-                                    txt_inconnu[word] += 1
-                                else:
-                                    txt_inconnu[word] = 1
-                            else:
-                                word_arr.append(word)
-                                if tuple(word_arr) in txt_inconnu:
-                                    txt_inconnu[tuple(word_arr)] += 1
-                                else:
-                                    txt_inconnu[tuple(word_arr)] = 1
-                            word = ""
-                            if len(word_arr):
-                                word_arr.pop(0)
-                            ngram -= 1
-                        else:
-                            word_arr.append(word)
-                            if ponc != '':
-                                word_arr.append(ponc)
-                                ponc = ''
-                            word = ""
+        self._analyze(path_oeuvre, txt_inconnu)
 
         resultats = []
 
@@ -369,104 +419,10 @@ class markov:
             self.dict[subfolder] = dict()
             # pour chaque texte
             for filename in os.listdir(self.rep_aut + '/' + subfolder):
-                with open(os.path.join(self.rep_aut + '/' + subfolder + '/', filename), 'r', encoding="utf-8") as file:
-                    word = ""
-                    ponc = ''
-                    word_arr = []
-                    ngram = 0
-                    for line in file:
-                        line = line.lower()
-                        for char in line:
-                            if char == '\n' or char == '\xa0':
-                                char = ' '
-                            elif self.keep_ponc and char in self.PONC:
-                                ponc = char
-                                char = ' '
-                            elif char in self.PONC:
-                                char = ' '
-                            if char != ' ':
-                                word += char
-                            # si le mot est trop petit, mot suivant
-                            elif len(word) < 3 and word != [0-99] and not(self.keep_ponc and char in self.PONC):
-                                word = ""
-                            elif word != "" or (self.keep_ponc and char in self.PONC):
-                                ngram += 1
-                                if word != "" and (self.keep_ponc and ponc in self.PONC):
-                                    ngram += 1
-                                if ngram == self.ngram:
-                                    if self.ngram == 1:
-                                        if word != "":
-                                            if word in self.dict[subfolder]:
-                                                self.dict[subfolder][word] += 1
-                                            else:
-                                                self.dict[subfolder][word] = 1
-                                        if ponc != '':
-                                            if ponc in self.dict[subfolder]:
-                                                self.dict[subfolder][ponc] += 1
-                                                ponc = ''
-                                            else:
-                                                self.dict[subfolder][ponc] = 1
-                                    else:
-                                        if word != "":
-                                            word_arr.append(word)
-                                            if tuple(word_arr) in self.dict[subfolder]:
-                                                self.dict[subfolder][tuple(word_arr)] += 1
-                                            else:
-                                                self.dict[subfolder][tuple(word_arr)] = 1
-                                        if ponc != '':
-                                            word_arr.append(ponc)
-                                            if tuple(word_arr) in self.dict[subfolder]:
-                                                self.dict[subfolder][tuple(word_arr)] += 1
-                                            else:
-                                                self.dict[subfolder][tuple(word_arr)] = 1
-                                    word = ""
-                                    ponc = ''
-                                    if len(word_arr):
-                                        word_arr.pop(0)
-                                    ngram -= 1
-                                elif ngram > self.ngram:
-                                    if self.ngram == 1:
-                                        if word != "":
-                                            if word in self.dict[subfolder]:
-                                                self.dict[subfolder][word] += 1
-                                            else:
-                                                self.dict[subfolder][word] = 1
-                                        if ponc != '':
-                                            if ponc in self.dict[subfolder]:
-                                                self.dict[subfolder][ponc] += 1
-                                            else:
-                                                self.dict[subfolder][ponc] = 1
-                                    else:
-                                        if word != "":
-                                            word_arr.append(word)
-                                            if tuple(word_arr) in self.dict[subfolder]:
-                                                self.dict[subfolder][tuple(word_arr)] += 1
-                                            else:
-                                                self.dict[subfolder][tuple(word_arr)] = 1
-                                        if ponc != '':
-                                            word_arr.append(ponc)
-                                            if tuple(word_arr) in self.dict[subfolder]:
-                                                self.dict[subfolder][tuple(word_arr)] += 1
-                                            else:
-                                                self.dict[subfolder][tuple(word_arr)] = 1
-                                    word = ""
-                                    ponc = ''
-                                    while ngram > self.ngram - 1:
-                                        if len(word_arr):
-                                            word_arr.pop(0)
-                                        ngram -= 1
-                                elif ngram < self.ngram:
-                                    word_arr.append(word)
-                                    word = ""
-                                    if ponc != '':
-                                        word_arr.append(ponc)
-                                        ponc = ''
-            if self.nth_most is not None:
-                print(subfolder + " : " + str(self.get_nth_element(subfolder, self.nth_most)))
+                self._analyze(os.path.join(self.rep_aut + '/' + subfolder + '/', filename), self.dict[subfolder])
+
             for i in range(1, 15):
                 print(subfolder + " : " + str(self.get_nth_element(subfolder, i)))
-            # print(subfolder + " : " + str(self.get_nth_element(subfolder, 0)))
-            # print(subfolder + " : " + str(self.dict[subfolder]["-"]))
 
         return
 
@@ -492,8 +448,6 @@ if __name__ == "__main__":
         m.set_ngram(args.m)
     else:
         args.m = False
-    if args.F is not None:
-        m.nth_most = args.F
 
     m.analyze()
     if args.f:
