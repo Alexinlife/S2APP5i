@@ -425,30 +425,3 @@ class markov:
                 self._analyze(os.path.join(self.rep_aut + '/' + subfolder + '/', filename), self.dict[subfolder])
 
         return
-
-
-# Main
-# Arguments de la ligne de commande
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', required=True, help="répertoire dans lequel se trouvent les textes des auteurs")
-    parser.add_argument('-a', help="auteur sur lequel portera l'analyse")
-    parser.add_argument('-A', action='store_true', help="effectuer l'analyse sur tous les auteurs")
-    parser.add_argument('-f', help="fichier de texte à comparer avec les fréquences des fichiers de l’auteur choisi")
-    parser.add_argument('-m', required=True, type=int, help="taille des n-grammes")
-    parser.add_argument('-F', type=int, help="afficher le n-ieme n-gramme le plus fréquent")
-    parser.add_argument('-G', help="générer un ou plusieurs textes aléatoires selon les paramètres entrés")
-    args = parser.parse_args()
-
-    m = markov()
-
-    if args.d:
-        m.set_aut_dir(args.d)
-    if args.m:
-        m.set_ngram(args.m)
-    else:
-        args.m = False
-
-    m.analyze()
-    if args.f:
-        print(m.find_author(args.f))
