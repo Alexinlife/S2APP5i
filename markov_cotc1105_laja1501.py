@@ -217,14 +217,20 @@ class markov:
 
         resultats = []
 
-        for auteur in self.folders:
+        for auteur in self.auteurs:
             txt_valeur = []
             auteur_valeur = []
             for txt_key in txt_inconnu.keys():
+                matched = 0
                 for auteur_key in self.dict[auteur].keys():
                     if txt_key == auteur_key:
                         txt_valeur.append(txt_inconnu[txt_key])
                         auteur_valeur.append(self.dict[auteur][auteur_key])
+                        matched = 1
+                        break
+                if matched == 0:
+                    txt_valeur.append(txt_inconnu[txt_key])
+                    auteur_valeur.append(0)
 
             norme_txt = 0
             for norme_calcul1 in txt_valeur:
@@ -301,10 +307,10 @@ class markov:
                     file.write(str(empreinte_auteur[mot][0]) + " ")
 
                 else:
-                    n = 0
-                    chaine = empreinte_auteur[mot][0][0]
+                    n = 1
+                    chaine = empreinte_auteur[mot][0][0] + " "
                     while n < self.ngram:
-                        chaine = chaine + " " + empreinte_auteur[mot][0][n] + " "
+                        chaine = chaine + empreinte_auteur[mot][0][n] + " "
                         n = n + 1
                     file.write(chaine)
                 ligne = ligne + 1
