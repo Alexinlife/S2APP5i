@@ -235,12 +235,18 @@ class markov:
             norme_txt = 0
             for norme_calcul1 in txt_valeur:
                 norme_txt += norme_calcul1**2
-            norme_txt = 1/math.sqrt(norme_txt)
+            if norme_txt != 0:
+                norme_txt = 1/math.sqrt(norme_txt)
+            else:
+                norme_txt = 1
 
             norme_auteur = 0
             for norme_calcul2 in auteur_valeur:
                 norme_auteur += norme_calcul2**2
-            norme_auteur = 1/math.sqrt(norme_auteur)
+            if norme_auteur != 0:
+                norme_auteur = 1/math.sqrt(norme_auteur)
+            else:
+                norme_auteur = 1
 
             i = 0
             resultat_auteur = 0
