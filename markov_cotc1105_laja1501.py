@@ -265,17 +265,20 @@ class markov:
 
         self._analyze(path_oeuvre, txt_inconnu)
 
+        txt_inconnu = dict(sorted(txt_inconnu.items(), key=lambda x: x[1], reverse=True))
+
         resultats = []
 
         for auteur in self.auteurs:
             txt_valeur = []
             auteur_valeur = []
+            sorted_dict = dict(sorted(self.dict[auteur].items(), key=lambda x: x[1], reverse=True))
             for txt_key in txt_inconnu.keys():
                 matched = 0
-                for auteur_key in self.dict[auteur].keys():
+                for auteur_key in sorted_dict.keys():
                     if txt_key == auteur_key:
                         txt_valeur.append(txt_inconnu[txt_key])
-                        auteur_valeur.append(self.dict[auteur][auteur_key])
+                        auteur_valeur.append(sorted_dict[auteur_key])
                         matched = 1
                         break
                 if matched == 0:
@@ -420,9 +423,6 @@ class markov:
             # pour chaque texte
             for filename in os.listdir(self.rep_aut + '/' + subfolder):
                 self._analyze(os.path.join(self.rep_aut + '/' + subfolder + '/', filename), self.dict[subfolder])
-
-            for i in range(1, 15):
-                print(subfolder + " : " + str(self.get_nth_element(subfolder, i)))
 
         return
 
