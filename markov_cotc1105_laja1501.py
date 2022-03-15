@@ -25,7 +25,6 @@
 import os
 import glob
 import ntpath
-import argparse
 import math
 import random
 
@@ -147,13 +146,26 @@ class markov:
     # Ensuite, selon ce qui est demandé, les fonctions find_author(), gen_text() ou get_nth_element() sont appelées
 
     def _analyze(self, path, dict):
+        """Helper function pour analyze() et find_author().
+            Cree un dictionnaire contenant tous les n-grammes d'un fichier texte
+
+                Args :
+                    path : le chemin d'acces au fichier a analyser
+                    dict : le dictionnaire dans lequel inserer les paires cle/valeur
+
+                Returns:
+                    void : ne fait que modifier le dictionnaire donne en parametre
+                """
+
         with open(path, 'r', encoding="utf-8") as file:
             word = ""
             ponc = ''
             word_arr = []
             ngram = 0
+            # pour chaque ligne
             for line in file:
                 line = line.lower()
+                # pour chaque caractere
                 for char in line:
                     if char == '\n' or char == '\xa0':
                         char = ' '
@@ -167,10 +179,12 @@ class markov:
                     # si le mot est trop petit, mot suivant
                     elif len(word) < 3 and word != [0 - 99] and not (self.keep_ponc and char in self.PONC):
                         word = ""
+                    # si ponctuation ou mot valide
                     elif word != "" or (self.keep_ponc and char in self.PONC):
                         ngram += 1
                         if word != "" and (self.keep_ponc and ponc in self.PONC):
                             ngram += 1
+                        # si autant de cles que la taille du n-gramme
                         if ngram == self.ngram:
                             if self.ngram == 1:
                                 if word != "":
@@ -202,6 +216,7 @@ class markov:
                             if len(word_arr):
                                 word_arr.pop(0)
                             ngram -= 1
+                        # si plus de cles que la taille du n-gramme
                         elif ngram > self.ngram:
                             if self.ngram == 1:
                                 if word != "":
@@ -233,6 +248,7 @@ class markov:
                                 if len(word_arr):
                                     word_arr.pop(0)
                                 ngram -= 1
+                        # si moins de cles que la taille du n-gramme
                         elif ngram < self.ngram:
                             word_arr.append(word)
                             word = ""
@@ -393,6 +409,7 @@ class markov:
         smallest_index = n
         greatest_index = n
         return_arr = []
+        # Trouver le plus petit index ayant la meme valeur
         while smallest_index > 0:
             smallest_index -= 1
             if smallest_index < 0:
@@ -400,11 +417,13 @@ class markov:
             elif sorted_table[smallest_index][1] != sorted_table[n][1]:
                 smallest_index += 1
                 break
+        # Trouver le plus grand index ayant la meme valeur
         while greatest_index < len(sorted_table):
             greatest_index += 1
             if sorted_table[greatest_index][1] != sorted_table[n][1] and greatest_index > smallest_index + 1:
                 greatest_index -= 1
                 break
+        # Retourner tous les index ayant la meme valeur que le n-ieme element
         for i in range(smallest_index, greatest_index):
             return_arr.append(sorted_table[i])
 
